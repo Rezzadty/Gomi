@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { getUserSession, logout } from '../../utils/authHelper';
 import { useToast } from '../../utils/useToast';
@@ -8,9 +8,11 @@ import StatCard from '../../components/StatCard';
 import SensorChart from '../../components/SensorChart';
 import DataTable from '../../components/DataTable';
 import Toast from '../../components/Toast';
+import ConfirmationModal from '../../components/ConfirmationModal';
 
 export default function DashboardScreen() {
   const [session, setSession] = useState(null);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const router = useRouter();
   const { toasts, showSuccess, showError, showWarning, hideToast } = useToast();
   
@@ -27,30 +29,42 @@ export default function DashboardScreen() {
   const checkAuth = async () => {
     const sessionData = await getUserSession();
     if (!sessionData || !sessionData.isAuthenticated) {
-      router.replace('/');
+      router.replace('/Auth');
     } else {
       setSession(sessionData);
     }
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      'Konfirmasi Logout',
-      'Apakah Anda yakin ingin keluar dari sistem?',
-      [
-        {
-          text: 'Batal',
-          style: 'cancel'
-        },
-        {
-          text: 'Ya, Keluar',
-          onPress: async () => {
-            await logout();
-            router.replace('/');
-          }
-        }
-      ]
-    );
+    console.log('Logout button clicked');
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = async () => {
+    console.log('Confirming logout...');
+    setShowLogoutModal(false);
+    
+    // Tampilkan loading toast
+    showWarning('Sedang logout...');
+    
+    // Delay untuk animasi smooth
+    setTimeout(async () => {
+      // Hapus session dari secure storage
+      await logout();
+      
+      // Tampilkan pesan sukses
+      showSuccess('Berhasil logout!');
+      
+      // Kembali ke halaman Auth (login)
+      setTimeout(() => {
+        router.replace('/Auth');
+      }, 500);
+    }, 300);
+  };
+
+  const cancelLogout = () => {
+    console.log('Logout cancelled');
+    setShowLogoutModal(false);
   };
 
   if (loading) {
@@ -74,6 +88,18 @@ export default function DashboardScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Logout Confirmation Modal */}
+      <ConfirmationModal
+        visible={showLogoutModal}
+        title="Konfirmasi Logout"
+        message="Apakah Anda yakin ingin keluar dari sistem?"
+        confirmText="Ya, Keluar"
+        cancelText="Batal"
+        confirmColor="#ef4444"
+        onConfirm={confirmLogout}
+        onCancel={cancelLogout}
+      />
+
       {/* Toast Notifications */}
       {toasts.map((toast) => (
         <Toast
