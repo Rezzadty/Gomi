@@ -2,13 +2,14 @@ import CryptoJS from "crypto-js";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
+import { SuccessModal } from "../components/SuccessModal";
 import { saveUserSession } from "../utils/authHelper";
 import "../utils/cryptoPolyfill"; // Must be first to setup crypto
 
@@ -19,10 +20,9 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const router = useRouter();
 
-  // Encrypted credentials
   const encryptedCredentials = {
     username: CryptoJS.AES.encrypt("admin", SECRET_KEY).toString(),
     password: CryptoJS.AES.encrypt("password123", SECRET_KEY).toString(),
@@ -41,7 +41,6 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     console.log("Login button pressed");
     setError("");
-    setSuccess(false);
 
     if (!username || !password) {
       setError("Please enter username and password");
@@ -60,7 +59,6 @@ export default function LoginScreen() {
 
       if (username === validUsername && password === validPassword) {
         console.log("Login successful, saving session...");
-        // Save session first
         await saveUserSession({
           isAuthenticated: true,
           username: username,
@@ -68,24 +66,27 @@ export default function LoginScreen() {
         });
 
         console.log("Session saved successfully");
-        setSuccess(true);
-
-        // Wait a moment then navigate
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        console.log("Attempting navigation to (tabs)...");
-        router.replace("/(tabs)");
-        console.log("Navigation command executed");
+        setLoading(false);
+        setShowSuccessModal(true);
       } else {
         console.log("Invalid credentials");
         setError("Invalid username or password");
+        setLoading(false);
       }
     } catch (error) {
       console.error("Login error:", error);
       setError("An error occurred during login");
-    } finally {
       setLoading(false);
     }
+  };
+
+  const handleModalComplete = () => {
+    setShowSuccessModal(false);
+    // Navigate to dashboard after modal closes
+    setTimeout(() => {
+      console.log("Navigating to dashboard...");
+      router.replace("/(tabs)");
+    }, 300);
   };
 
   return (
@@ -131,18 +132,10 @@ export default function LoginScreen() {
             </View>
           ) : null}
 
-          {success ? (
-            <View style={styles.successContainer}>
-              <Text style={styles.successText}>
-                ✅ Login successful! Redirecting...
-              </Text>
-            </View>
-          ) : null}
-
           <TouchableOpacity
             style={[styles.button, loading && styles.buttonDisabled]}
             onPress={handleLogin}
-            disabled={loading || success}
+            disabled={loading || showSuccessModal}
             activeOpacity={0.7}>
             {loading ? (
               <ActivityIndicator color="#ffffff" />
@@ -152,6 +145,12 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      <SuccessModal
+        visible={showSuccessModal}
+        message="Mengalihkan ke dashboard..."
+        onComplete={handleModalComplete}
+      />
     </View>
   );
 }

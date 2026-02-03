@@ -2,7 +2,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const SESSION_KEY = "userSession";
 
-// Check if user is authenticated
 export const isAuthenticated = async () => {
   try {
     const session = await AsyncStorage.getItem(SESSION_KEY);
@@ -16,7 +15,6 @@ export const isAuthenticated = async () => {
   }
 };
 
-// Get user session data
 export const getUserSession = async () => {
   try {
     const session = await AsyncStorage.getItem(SESSION_KEY);
@@ -32,7 +30,6 @@ export const getUserSession = async () => {
   }
 };
 
-// Save user session
 export const saveUserSession = async (sessionData) => {
   try {
     console.log("[AUTH HELPER] Saving session:", sessionData);
@@ -44,7 +41,6 @@ export const saveUserSession = async (sessionData) => {
   }
 };
 
-// Logout user
 export const logout = async () => {
   try {
     await AsyncStorage.removeItem(SESSION_KEY);

@@ -1,26 +1,34 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
-import { getUserSession, logout } from '../../utils/authHelper';
-import { useToast } from '../../utils/useToast';
-import { useSensorData } from '../../utils/useSensorData';
-import StatCard from '../../components/StatCard';
-import SensorChart from '../../components/SensorChart';
-import DataTable from '../../components/DataTable';
-import Toast from '../../components/Toast';
-import ConfirmationModal from '../../components/ConfirmationModal';
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import {
+    ActivityIndicator,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import ConfirmationModal from "../../components/ConfirmationModal";
+import DataTable from "../../components/DataTable";
+import SensorChart from "../../components/SensorChart";
+import StatCard from "../../components/StatCard";
+import Toast from "../../components/Toast";
+import { getUserSession, logout } from "../../utils/authHelper";
+import { useSensorData } from "../../utils/useSensorData";
+import { useToast } from "../../utils/useToast";
 
 export default function DashboardScreen() {
   const [session, setSession] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const router = useRouter();
   const { toasts, showSuccess, showError, showWarning, hideToast } = useToast();
-  
-  const { latestData, sensorData, deviceStatus, loading, error } = useSensorData({
-    showSuccess,
-    showError,
-    showWarning
-  });
+
+  const { latestData, sensorData, deviceStatus, loading, error } =
+    useSensorData({
+      showSuccess,
+      showError,
+      showWarning,
+    });
 
   useEffect(() => {
     checkAuth();
@@ -29,41 +37,41 @@ export default function DashboardScreen() {
   const checkAuth = async () => {
     const sessionData = await getUserSession();
     if (!sessionData || !sessionData.isAuthenticated) {
-      router.replace('/Auth');
+      router.replace("/Auth");
     } else {
       setSession(sessionData);
     }
   };
 
   const handleLogout = () => {
-    console.log('Logout button clicked');
+    console.log("Logout button clicked");
     setShowLogoutModal(true);
   };
 
   const confirmLogout = async () => {
-    console.log('Confirming logout...');
+    console.log("Confirming logout...");
     setShowLogoutModal(false);
-    
+
     // Tampilkan loading toast
-    showWarning('Sedang logout...');
-    
+    showWarning("Sedang logout...");
+
     // Delay untuk animasi smooth
     setTimeout(async () => {
       // Hapus session dari secure storage
       await logout();
-      
+
       // Tampilkan pesan sukses
-      showSuccess('Berhasil logout!');
-      
+      showSuccess("Berhasil logout!");
+
       // Kembali ke halaman Auth (login)
       setTimeout(() => {
-        router.replace('/Auth');
+        router.replace("/Auth");
       }, 500);
     }, 300);
   };
 
   const cancelLogout = () => {
-    console.log('Logout cancelled');
+    console.log("Logout cancelled");
     setShowLogoutModal(false);
   };
 
@@ -81,7 +89,9 @@ export default function DashboardScreen() {
       <View style={styles.errorContainer}>
         <Text style={styles.errorIcon}>⚠️</Text>
         <Text style={styles.errorText}>{error}</Text>
-        <Text style={styles.errorHint}>Pastikan konfigurasi Firebase sudah benar</Text>
+        <Text style={styles.errorHint}>
+          Pastikan konfigurasi Firebase sudah benar
+        </Text>
       </View>
     );
   }
@@ -126,18 +136,23 @@ export default function DashboardScreen() {
 
       {/* Device Status */}
       <View style={styles.statusBar}>
-        <View style={[styles.statusBadge, deviceStatus.isOnline ? styles.statusOnline : styles.statusOffline]}>
-          <Text style={styles.statusIcon}>{deviceStatus.isOnline ? '🟢' : '🔴'}</Text>
+        <View
+          style={[
+            styles.statusBadge,
+            deviceStatus.isOnline ? styles.statusOnline : styles.statusOffline,
+          ]}>
+          <Text style={styles.statusIcon}>
+            {deviceStatus.isOnline ? "🟢" : "🔴"}
+          </Text>
           <Text style={styles.statusText}>
-            {deviceStatus.isOnline ? 'Alat Aktif' : 'Alat Mati'}
+            {deviceStatus.isOnline ? "Alat Aktif" : "Alat Mati"}
           </Text>
         </View>
         {!deviceStatus.isOnline && deviceStatus.offlineMinutes !== null && (
           <Text style={styles.offlineText}>
-            {deviceStatus.offlineMinutes < 60 
+            {deviceStatus.offlineMinutes < 60
               ? `${deviceStatus.offlineMinutes} menit yang lalu`
-              : `${Math.floor(deviceStatus.offlineMinutes / 60)} jam yang lalu`
-            }
+              : `${Math.floor(deviceStatus.offlineMinutes / 60)} jam yang lalu`}
           </Text>
         )}
       </View>
@@ -145,7 +160,9 @@ export default function DashboardScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Welcome Card */}
         <View style={styles.welcomeCard}>
-          <Text style={styles.welcomeTitle}>Selamat Datang, {session?.username || 'User'}!</Text>
+          <Text style={styles.welcomeTitle}>
+            Selamat Datang, {session?.username || "User"}!
+          </Text>
           <Text style={styles.welcomeText}>
             Dashboard monitoring kualitas udara secara real-time
           </Text>
@@ -177,24 +194,24 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0D1B2A',
+    backgroundColor: "#0D1B2A",
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#0D1B2A',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#0D1B2A",
   },
   loadingText: {
-    color: '#ffffff',
+    color: "#ffffff",
     marginTop: 15,
     fontSize: 16,
   },
   errorContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#0D1B2A',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#0D1B2A",
     padding: 20,
   },
   errorIcon: {
@@ -202,88 +219,88 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   errorText: {
-    color: '#ef4444',
+    color: "#ef4444",
     fontSize: 18,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 10,
   },
   errorHint: {
-    color: '#94a3b8',
+    color: "#94a3b8",
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#1a2f47',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#1a2f47",
     padding: 15,
     paddingTop: 50,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 4,
   },
   headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   headerIcon: {
     fontSize: 32,
     marginRight: 12,
   },
   headerTitle: {
-    color: '#ffffff',
+    color: "#ffffff",
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   headerSubtitle: {
-    color: '#94a3b8',
+    color: "#94a3b8",
     fontSize: 12,
   },
   logoutButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 8,
   },
   logoutText: {
-    color: '#ffffff',
+    color: "#ffffff",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   statusBar: {
-    backgroundColor: '#1a2f47',
+    backgroundColor: "#1a2f47",
     padding: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 20,
   },
   statusOnline: {
-    backgroundColor: 'rgba(34, 197, 94, 0.2)',
+    backgroundColor: "rgba(34, 197, 94, 0.2)",
   },
   statusOffline: {
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    backgroundColor: "rgba(239, 68, 68, 0.2)",
   },
   statusIcon: {
     fontSize: 16,
     marginRight: 8,
   },
   statusText: {
-    color: '#ffffff',
+    color: "#ffffff",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   offlineText: {
-    color: '#94a3b8',
+    color: "#94a3b8",
     fontSize: 12,
     marginLeft: 10,
   },
@@ -291,38 +308,38 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   welcomeCard: {
-    backgroundColor: '#1a2f47',
+    backgroundColor: "#1a2f47",
     margin: 20,
     padding: 25,
     borderRadius: 12,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 4,
   },
   welcomeTitle: {
-    color: '#ffffff',
+    color: "#ffffff",
     fontSize: 24,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 10,
   },
   welcomeText: {
-    color: '#94a3b8',
+    color: "#94a3b8",
     fontSize: 16,
   },
   footer: {
     padding: 30,
-    alignItems: 'center',
+    alignItems: "center",
   },
   footerText: {
-    color: '#ffffff',
+    color: "#ffffff",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
     marginBottom: 5,
   },
   footerSubtext: {
-    color: '#64748b',
+    color: "#64748b",
     fontSize: 12,
   },
 });
