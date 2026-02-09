@@ -13,8 +13,29 @@ const firebaseConfig = {
   appId: Constants.expoConfig?.extra?.EXPO_PUBLIC_FIREBASE_APP_ID || process.env.EXPO_PUBLIC_FIREBASE_APP_ID
 };
 
+// Validate Firebase configuration
+const validateConfig = () => {
+  const requiredKeys = ['apiKey', 'authDomain', 'databaseURL', 'projectId', 'appId'];
+  const missingKeys = requiredKeys.filter(key => !firebaseConfig[key]);
+  
+  if (missingKeys.length > 0) {
+    console.error('❌ Firebase Configuration Error!');
+    console.error('Missing Firebase config keys:', missingKeys.join(', '));
+    console.error('Please add Firebase credentials to app.json under "extra" field');
+    throw new Error(
+      `Firebase configuration incomplete. Missing: ${missingKeys.join(', ')}. ` +
+      'Please check app.json and ensure all Firebase credentials are configured.'
+    );
+  }
+};
+
+// Validate before initialization
+validateConfig();
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
+
+console.log('✅ Firebase initialized successfully');
 
 export { database, ref, onValue, query, orderByChild, limitToLast };

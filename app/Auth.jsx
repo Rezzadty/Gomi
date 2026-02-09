@@ -11,7 +11,6 @@ import {
 } from "react-native";
 import { SuccessModal } from "../components/SuccessModal";
 import { saveUserSession } from "../utils/authHelper";
-import "../utils/cryptoPolyfill"; // Must be first to setup crypto
 
 const SECRET_KEY = "iot-dashboard-secret-key-2025";
 
