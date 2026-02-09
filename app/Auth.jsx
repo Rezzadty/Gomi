@@ -2,12 +2,12 @@ import CryptoJS from "crypto-js";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    ActivityIndicator,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SuccessModal } from "../components/SuccessModal";
 import { saveUserSession } from "../utils/authHelper";
