@@ -1,6 +1,16 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function DataTable({ data }) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
   if (data.length === 0) {
     return (
       <View style={styles.container}>
@@ -9,13 +19,28 @@ export default function DataTable({ data }) {
     );
   }
 
-  // Show only first 10 items
-  const displayData = data.slice(0, 10);
+  // Calculate pagination
+  const totalPages = Math.ceil(data.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const displayData = data.slice(startIndex, endIndex);
+
+  const goToFirstPage = () => setCurrentPage(1);
+  const goToPreviousPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+  const goToNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>📋 Riwayat Data Sensor (10 Terakhir)</Text>
+        <Text style={styles.title}>Riwayat Data Sensor</Text>
+        <Text style={styles.pageInfo}>
+          Page {currentPage} of {totalPages}
+        </Text>
+        <Text style={styles.totalInfo}>Total: {data.length} records</Text>
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={true}>
@@ -63,6 +88,37 @@ export default function DataTable({ data }) {
           ))}
         </View>
       </ScrollView>
+
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={[styles.button, currentPage === 1 && styles.buttonDisabled]}
+          onPress={goToPreviousPage}
+          disabled={currentPage === 1}>
+          <Text
+            style={[
+              styles.buttonText,
+              currentPage === 1 && styles.buttonTextDisabled,
+            ]}>
+            Previous
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.button,
+            currentPage === totalPages && styles.buttonDisabled,
+          ]}
+          onPress={goToNextPage}
+          disabled={currentPage === totalPages}>
+          <Text
+            style={[
+              styles.buttonText,
+              currentPage === totalPages && styles.buttonTextDisabled,
+            ]}>
+            Next
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -86,6 +142,16 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 18,
     fontWeight: "600",
+    marginBottom: 8,
+  },
+  pageInfo: {
+    color: "#97a4b6",
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  totalInfo: {
+    color: "#94a3b8",
+    fontSize: 14,
   },
   noDataText: {
     color: "#94a3b8",
@@ -129,5 +195,35 @@ const styles = StyleSheet.create({
   },
   timestampCell: {
     width: 150,
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 10,
+    marginTop: 15,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: "#334155",
+  },
+  button: {
+    flex: 1,
+    backgroundColor: "#00b4d8",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  buttonDisabled: {
+    backgroundColor: "#334155",
+    opacity: 0.5,
+  },
+  buttonText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  buttonTextDisabled: {
+    color: "#64748b",
   },
 });

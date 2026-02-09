@@ -1,6 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
-import { LineChart } from 'react-native-chart-kit';
+import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
+import Svg, { Circle, G, Line, Path, Text as SvgText } from "react-native-svg";
 
 export default function SensorChart({ data }) {
   if (data.length === 0) {
@@ -11,143 +10,180 @@ export default function SensorChart({ data }) {
     );
   }
 
-  const screenWidth = Dimensions.get('window').width;
-  
-  // Get last 10 data points
   const chartData = data.slice(0, 10).reverse();
 
-  const temperatureData = {
-    labels: chartData.map((_, index) => `${index + 1}`),
-    datasets: [{
-      data: chartData.map(item => item.temperature),
-      color: (opacity = 1) => `rgba(255, 107, 107, ${opacity})`,
-      strokeWidth: 2
-    }]
-  };
+  // Cubic interpolation for smooth curves
+  const cubicInterpolation = (points) => {
+    if (points.length < 2) return "";
 
-  const humidityData = {
-    labels: chartData.map((_, index) => `${index + 1}`),
-    datasets: [{
-      data: chartData.map(item => item.humidity),
-      color: (opacity = 1) => `rgba(0, 180, 216, ${opacity})`,
-      strokeWidth: 2
-    }]
-  };
+    let path = `M ${points[0].x} ${points[0].y}`;
 
-  const mq135Data = {
-    labels: chartData.map((_, index) => `${index + 1}`),
-    datasets: [{
-      data: chartData.map(item => item.mq135_ratio),
-      color: (opacity = 1) => `rgba(155, 89, 182, ${opacity})`,
-      strokeWidth: 2
-    }]
-  };
+    for (let i = 0; i < points.length - 1; i++) {
+      const current = points[i];
+      const next = points[i + 1];
+      const controlPointX = (current.x + next.x) / 2;
 
-  const mq7Data = {
-    labels: chartData.map((_, index) => `${index + 1}`),
-    datasets: [{
-      data: chartData.map(item => item.mq7_ratio),
-      color: (opacity = 1) => `rgba(231, 76, 60, ${opacity})`,
-      strokeWidth: 2
-    }]
-  };
-
-  const chartConfig = {
-    backgroundGradientFrom: '#1a2f47',
-    backgroundGradientTo: '#1a2f47',
-    decimalPlaces: 2,
-    color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-    style: {
-      borderRadius: 16
-    },
-    propsForDots: {
-      r: '4',
-      strokeWidth: '2',
+      path += ` Q ${controlPointX} ${current.y}, ${controlPointX} ${(current.y + next.y) / 2}`;
+      path += ` Q ${controlPointX} ${next.y}, ${next.x} ${next.y}`;
     }
+
+    return path;
   };
+
+  // Render interpolated line chart
+  const renderLineChart = (values, label, color) => {
+    const screenWidth = Dimensions.get("window").width;
+    const max = Math.max(...values);
+    const min = Math.min(...values);
+    const range = max - min || 1;
+    const chartHeight = 160;
+    const chartWidth = Math.min(screenWidth - 80, 320); // Max 320px for better display
+    const padding = 25;
+
+    const points = values.map((value, index) => ({
+      x: padding + (index * (chartWidth - 2 * padding)) / (values.length - 1),
+      y:
+        padding +
+        chartHeight -
+        ((value - min) / range) * (chartHeight - padding),
+    }));
+
+    const pathData = cubicInterpolation(points);
+
+    return (
+      <View style={styles.chartCard}>
+        <Text style={styles.chartTitle}>{label}</Text>
+        <View style={styles.chartContainer}>
+          <Svg
+            width={chartWidth + 10}
+            height={chartHeight + 75}
+            viewBox={`-5 0 ${chartWidth + 10} ${chartHeight + 75}`}>
+            {/* Grid lines */}
+            {[0, 1, 2, 3, 4].map((i) => {
+              const y = padding + (i * (chartHeight - padding)) / 4;
+              return (
+                <Line
+                  key={i}
+                  x1={padding}
+                  y1={y}
+                  x2={chartWidth - padding}
+                  y2={y}
+                  stroke="#334155"
+                  strokeWidth="1"
+                  strokeDasharray="4 4"
+                />
+              );
+            })}
+
+            {/* Area under curve */}
+            <Path
+              d={`${pathData} L ${points[points.length - 1].x} ${chartHeight + padding} L ${points[0].x} ${chartHeight + padding} Z`}
+              fill={color}
+              fillOpacity="0.2"
+            />
+
+            {/* Interpolated line */}
+            <Path
+              d={pathData}
+              fill="none"
+              stroke={color}
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+
+            {/* Data points */}
+            {points.map((point, index) => (
+              <G key={index}>
+                <Circle
+                  cx={point.x}
+                  cy={point.y}
+                  r="5"
+                  fill={color}
+                  stroke="#1a2f47"
+                  strokeWidth="2"
+                />
+                <SvgText
+                  x={point.x}
+                  y={chartHeight + padding + 18}
+                  fill="#94a3b8"
+                  fontSize="10"
+                  textAnchor="middle">
+                  {values[index].toFixed(1)}
+                </SvgText>
+              </G>
+            ))}
+
+            {/* Axis labels */}
+            <SvgText
+              x={padding - 15}
+              y={chartHeight + padding + 40}
+              fill="#94a3b8"
+              fontSize="11"
+              fontWeight="500">
+              Start
+            </SvgText>
+            <SvgText
+              x={chartWidth - padding + 15}
+              y={chartHeight + padding + 40}
+              fill="#94a3b8"
+              fontSize="11"
+              fontWeight="500"
+              textAnchor="end">
+              Latest
+            </SvgText>
+          </Svg>
+        </View>
+      </View>
+    );
+  };
+
+  const temperatureValues = chartData.map((item) => item.temperature);
+  const humidityValues = chartData.map((item) => item.humidity);
+  const mq135Values = chartData.map((item) => item.mq135_ratio);
+  const mq7Values = chartData.map((item) => item.mq7_ratio);
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.chartCard}>
-        <Text style={styles.chartTitle}>📊 Temperature Trend (°C)</Text>
-        <LineChart
-          data={temperatureData}
-          width={screenWidth - 60}
-          height={220}
-          chartConfig={chartConfig}
-          bezier
-          style={styles.chart}
-        />
-      </View>
-
-      <View style={styles.chartCard}>
-        <Text style={styles.chartTitle}>💧 Humidity Trend (%)</Text>
-        <LineChart
-          data={humidityData}
-          width={screenWidth - 60}
-          height={220}
-          chartConfig={chartConfig}
-          bezier
-          style={styles.chart}
-        />
-      </View>
-
-      <View style={styles.chartCard}>
-        <Text style={styles.chartTitle}>🌫️ MQ-135 Gas Sensor (PPM)</Text>
-        <LineChart
-          data={mq135Data}
-          width={screenWidth - 60}
-          height={220}
-          chartConfig={chartConfig}
-          bezier
-          style={styles.chart}
-        />
-      </View>
-
-      <View style={styles.chartCard}>
-        <Text style={styles.chartTitle}>💨 MQ-7 CO Sensor (PPM)</Text>
-        <LineChart
-          data={mq7Data}
-          width={screenWidth - 60}
-          height={220}
-          chartConfig={chartConfig}
-          bezier
-          style={styles.chart}
-        />
-      </View>
+      {renderLineChart(temperatureValues, "Temperature Trend (°C)", "#ff6b6b")}
+      {renderLineChart(humidityValues, "Humidity Trend (%)", "#00b4d8")}
+      {renderLineChart(mq135Values, "MQ-135 Gas Sensor (PPM)", "#9b59b6")}
+      {renderLineChart(mq7Values, "MQ-7 Gas Sensor (PPM)", "#e74c3c")}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    flex: 1,
+    paddingHorizontal: 15,
+    paddingVertical: 20,
   },
   noDataText: {
-    color: '#94a3b8',
-    textAlign: 'center',
+    color: "#ccc",
+    textAlign: "center",
     fontSize: 16,
+    marginTop: 40,
   },
   chartCard: {
-    backgroundColor: '#1a2f47',
-    borderRadius: 12,
-    padding: 15,
+    backgroundColor: "#1a2f47",
+    borderRadius: 16,
+    padding: 20,
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowRadius: 8,
+    elevation: 5,
   },
   chartTitle: {
-    color: '#ffffff',
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
+    color: "#fff",
     marginBottom: 15,
   },
-  chart: {
-    marginVertical: 8,
-    borderRadius: 16,
+  chartContainer: {
+    alignItems: "center",
+    paddingVertical: 10,
   },
 });
